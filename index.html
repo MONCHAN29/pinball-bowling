@@ -529,7 +529,7 @@ const miniGeo=new THREE.SphereGeometry(R_BALL,12,8),ballMats={};
 function spawnBall(x,y,z,vx,vy,vz,r=R_BALL,den=14,col=0xff2d4a){
   const b=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(x,y,z).setCcdEnabled(r>=R_BALL).setLinearDamping(.02).setAngularDamping(.1).setLinvel(vx,vy,vz));
   ballCols.add(world.createCollider(RAPIER.ColliderDesc.ball(r).setDensity(den).setRestitution(.35).setFriction(.4),b).handle);
-  const m=new THREE.Mesh(r<R_BALL?miniGeo:ballMesh.geometry,col==='blue'?ballMesh.material:(ballMats[col]||(ballMats[col]=M(col,.15,.6,.15))));m.scale.setScalar(r/R_BALL);scene.add(m);extras.push({b,m,blue:col==='blue'});
+  const m=new THREE.Mesh(r<R_BALL?miniGeo:ballMesh.geometry,col==='blue'?ballMesh.material:(ballMats[col]||(ballMats[col]=M(col==='launch'?0xff2d4a:col,.15,.6,.15))));m.scale.setScalar(r/R_BALL);scene.add(m);extras.push({b,m,blue:col==='blue'||col==='launch'});
 }
 function flash(){cheer=1;const f=document.createElement('div');f.id='flash';document.body.appendChild(f);setTimeout(()=>f.remove(),800)}
 function newGame(){
@@ -561,7 +561,7 @@ function fire(){
   ball.setGravityScale(1,true);
   ball.setLinvel({x:d.x*v,y:0,z:d.z*v},true);
   ball.setAngvel({x:-d.z*v/R_BALL*.5,y:0,z:d.x*v/R_BALL*.5},true);
-  if(FEVER)[-1,1].forEach(sg=>{const a=sg*.1,c=Math.cos(a),sn=Math.sin(a);spawnBall(+pos.value+sg*1.2,R_BALL+.01,0,(d.x*c-d.z*sn)*v,0,(d.x*sn+d.z*c)*v,R_BALL,14,'blue')});
+  if(FEVER)[-1,1].forEach(sg=>{const a=sg*.1,c=Math.cos(a),sn=Math.sin(a);spawnBall(+pos.value+sg*1.2,R_BALL+.01,0,(d.x*c-d.z*sn)*v,0,(d.x*sn+d.z*c)*v,R_BALL,14,'launch')});
   beep(220,.25,'sawtooth',.06);
 }
 function countPins(){
