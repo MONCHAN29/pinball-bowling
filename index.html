@@ -26,6 +26,7 @@ p{max-width:560px;line-height:1.7;margin:6px 0 16px;color:#d5defa;font-family:sy
 .cta{font-family:var(--f);font-size:clamp(18px,4.5vw,28px);font-style:italic;color:#2a1c00;border:0;padding:14px 46px;cursor:pointer;background:#ffd21e;clip-path:polygon(18px 0,100% 0,calc(100% - 18px) 100%,0 100%);letter-spacing:.08em;transition:transform .1s}
 .cta:hover{transform:scale(1.05)}.cta:active{transform:scale(.97)}.cta:disabled{filter:grayscale(1)}
 .rank{margin-top:18px;padding:10px 22px 14px;min-width:min(340px,86vw)}
+.mcol{display:flex;flex-direction:column;align-items:center;flex:1 1 220px;max-width:340px}.mcol .rank{min-width:0;width:100%}.mcol .cta{font-size:clamp(15px,4vw,20px);padding:12px 20px;max-width:100%}.md{font-size:12px;margin:6px 0 0;line-height:1.4}
 .rank h3{margin:0 0 6px;font-family:var(--n);letter-spacing:.3em;color:var(--cy);font-size:15px}
 .rank ol{list-style:none;margin:0;padding:0}
 .rank li{display:flex;gap:12px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(138,163,220,.3);font-family:var(--n)}
@@ -78,11 +79,12 @@ input[type=range]{width:100%;accent-color:var(--yel);pointer-events:none}
   <div class="eyebrow">HIGH SCORE CHALLENGE</div>
   <h1 class="mt">PINBALL<br><span>×</span>BOWLING</h1>
   <p>動く位置と角度をタイミングよくストップ！複雑なピンボールと加速板を駆け抜けて、3投の合計でハイスコアを狙え！</p>
-  <div style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;align-items:flex-start">
-    <div style="display:flex;flex-direction:column;align-items:center"><button id="startBtn" class="cta" disabled>読み込み中…</button><div class="pn rank"><h3>RANKING</h3><div id="rankBox"></div></div></div>
-    <div style="display:flex;flex-direction:column;align-items:center"><button id="feverBtn" class="cta" disabled style="background:linear-gradient(180deg,#ff9a9a,#ff2d4a);color:#fff">ギミックフィーバー</button><div class="pn rank"><h3>FEVER RANKING</h3><div id="rankBoxF"></div></div></div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:flex-start;width:100%;max-width:760px">
+    <div class="mcol"><button id="startBtn" class="cta" disabled>読み込み中…</button><p class="md">通常ルール・3投の合計</p><div class="pn rank"><h3>RANKING</h3><div id="rankBox"></div></div></div>
+    <div class="mcol"><button id="hardBtn" class="cta" disabled style="background:linear-gradient(180deg,#b9c4dc,#3a4a78);color:#fff">ハードモード</button><p class="md">加速板なし・動く橋を渡れ</p><div class="pn rank"><h3>HARD RANKING</h3><div id="rankBoxH"></div></div></div>
+    <div class="mcol"><button id="feverBtn" class="cta" disabled style="background:linear-gradient(180deg,#ff9a9a,#ff2d4a);color:#fff">ギミックフィーバー</button><p class="md">1投勝負・3球同時・ピン300本</p><div class="pn rank"><h3>FEVER RANKING</h3><div id="rankBoxF"></div></div></div>
+    <div class="mcol"><button id="miniBtn" class="cta" disabled style="background:linear-gradient(180deg,#ffd08a,#ff9d00);color:#2a1c00">ミニボールフィーバー</button><p class="md">オレンジ5球・MULTI ORANGE×3</p><div class="pn rank"><h3>MINI RANKING</h3><div id="rankBoxM"></div></div></div>
   </div>
-  <p style="font-size:13px;margin:12px 0 0">ギミックフィーバー：1投勝負・ボール3球同時発射・ルーレット3つ・ピン300本の別ゲーム！</p>
   <p id="err"></p>
 </div>
 <div id="vs" class="ov hide"><div class="eyebrow">3 THROWS CHALLENGE</div><div class="vsrow"><span class="b">HIGH SCORE</span></div></div>
@@ -162,6 +164,7 @@ function box(w,h,d,x,y,z,m,ry=0,rz=0,rest=.5){
   const q=mesh.quaternion;
   const b=world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(x,y,z).setRotation({x:q.x,y:q.y,z:q.z,w:q.w}));
   const cd=RAPIER.ColliderDesc.cuboid(w/2,h/2,d/2).setRestitution(rest).setFriction(.3);const sn=m===mat.wall||m===mat.ramp;if(sn)cd.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);const col=world.createCollider(cd,b);if(sn)obs.set(col.handle,[220,'triangle']);
+  return{mesh,b};
 }
 let bi=0;
 function bumper(x,z){
@@ -183,7 +186,17 @@ function spinner(x,z,w){
   spinners.push({mesh,b});
 }
 box(14,.5,42,0,-.25,-19,floorM(7,21));
-box(18,.5,12,0,-.25,-46,floorM(9,6));
+const connNormal=box(18,.5,12,0,-.25,-46,floorM(9,6));
+const gapParts=[box(18,.5,5,0,-.25,-42.5,floorM(9,2.5)),box(18,.5,3,0,-.25,-50.5,floorM(9,1.5))];
+const BRZ=-47;
+const bridgeMesh=new THREE.Mesh(new THREE.BoxGeometry(2,.5,4.4),M(0xffd21e,.4,.3,.5));bridgeMesh.position.set(0,-.25,BRZ);scene.add(bridgeMesh);
+const bridgeB=world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0,-.25,BRZ));
+world.createCollider(RAPIER.ColliderDesc.cuboid(1,.25,2.2).setFriction(.5).setRestitution(.2),bridgeB);
+const gapDeco=new THREE.Group();
+[-45,-49].forEach(z=>{const m=new THREE.Mesh(new THREE.BoxGeometry(18,.06,.3),new THREE.MeshBasicMaterial({color:0xff2d4a}));m.position.set(0,.03,z);gapDeco.add(m)});
+scene.add(gapDeco);
+function setGap(on){connNormal.mesh.visible=!on;connNormal.b.setEnabled(!on);for(const g of gapParts){g.mesh.visible=on;g.b.setEnabled(on)}bridgeMesh.visible=on;bridgeB.setEnabled(on);gapDeco.visible=on}
+setGap(false);
 box(14.6,.5,42,0,-.25,-73,mat.lane);
 box(1,.5,42,-7.8,-.85,-73,mat.gut);box(1,.5,42,7.8,-.85,-73,mat.gut);
 box(.5,1.5,42,-7.25,.75,-19,mat.wall);box(.5,1.5,42,7.25,.75,-19,mat.wall);
@@ -216,14 +229,15 @@ spinner(0,-28,2.4);
 box(3.9,1,.4,-5.75,.5,-32.5,mat.wall,.88);box(3.9,1,.4,5.75,.5,-32.5,mat.wall,-.88);
 const sliders=[];
 {const m=new THREE.Mesh(new THREE.BoxGeometry(2.6,.9,.4),M(0xff2d4a,.4,.3,.5));scene.add(m);const b=world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0,.5,-39.2));{const col=world.createCollider(RAPIER.ColliderDesc.cuboid(1.3,.45,.2).setRestitution(.8).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),b);obs.set(col.handle,[500,'square'])}sliders.push({b,m,z:-39.2,amp:4.2,sp:1.7})}
+const gateG=new THREE.Group();scene.add(gateG);
 const GZ=-18,GW=1.6;
 const gateMat=new THREE.MeshBasicMaterial({color:0xffd21e,transparent:true,opacity:.28,side:THREE.DoubleSide});
 {const gm=new THREE.MeshBasicMaterial({color:0xffd21e});
- const pl=new THREE.Mesh(new THREE.PlaneGeometry(GW*2,1.6),gateMat);pl.position.set(0,.9,GZ);scene.add(pl);
- [[.18,1.8,.18,-GW,.9],[.18,1.8,.18,GW,.9],[GW*2+.2,.18,.18,0,1.8]].forEach(([w,h,d,x,y])=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),gm);o.position.set(x,y,GZ);scene.add(o)});
+ const pl=new THREE.Mesh(new THREE.PlaneGeometry(GW*2,1.6),gateMat);pl.position.set(0,.9,GZ);gateG.add(pl);
+ [[.18,1.8,.18,-GW,.9],[.18,1.8,.18,GW,.9],[GW*2+.2,.18,.18,0,1.8]].forEach(([w,h,d,x,y])=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),gm);o.position.set(x,y,GZ);gateG.add(o)});
  const gC=document.createElement('canvas');gC.width=256;gC.height=64;
  const g=gC.getContext('2d');g.font='italic 900 40px "Dela Gothic One",sans-serif';g.textAlign='center';g.fillStyle='#ffd21e';g.fillText('MULTI BALL',128,46,236);
- const gl=new THREE.Mesh(new THREE.PlaneGeometry(3.2,.8),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(gC),transparent:true}));gl.position.set(0,2.4,GZ);scene.add(gl)}
+ const gl=new THREE.Mesh(new THREE.PlaneGeometry(3.2,.8),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(gC),transparent:true}));gl.position.set(0,2.4,GZ);gateG.add(gl)}
 
 /* ---------- 加速板（移動式） ---------- */
 const PAD_Z=-47.5;
@@ -258,27 +272,32 @@ const roulettes=[{g:rg,mat:rMat,used:false,on:true,amp:4.8,sp:1.1,ph:1.5}];
   m.rotation.x=-Math.PI/2;m.position.y=.04;g.add(m);g.position.z=z;g.visible=false;scene.add(g);
   roulettes.push({g,mat:mt,used:false,on:false,amp,sp,ph});
 });
-function resetRoulettes(){for(const r of roulettes){r.used=false;r.mat.color.setHex(0xffffff)}mo.used=false;mo.mat.color.setHex(0xffffff)}
+function resetRoulettes(){for(const r of roulettes){r.used=false;r.mat.color.setHex(0xffffff)}for(const m of mos){m.used=false;m.mat.color.setHex(0xffffff)}}
 function mkWheel(cols){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d'),a=Math.PI*2/cols.length;cols.forEach((col,i)=>{g.beginPath();g.moveTo(128,128);g.arc(128,128,122,i*a,(i+1)*a);g.closePath();g.fillStyle=col;g.fill()});g.lineWidth=10;g.strokeStyle='#ffd21e';g.beginPath();g.arc(128,128,122,0,7);g.stroke();g.fillStyle='#111';g.beginPath();g.arc(128,128,22,0,7);g.fill();const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
 const rTexF=mkWheel(['#2cff7a','#ff2d4a','#1e6bff','#34d3ff','#555555']);
 const moC=document.createElement('canvas');moC.width=256;moC.height=128;
 {const g=moC.getContext('2d');g.fillStyle='#ff9d00';g.fillRect(0,0,256,128);g.strokeStyle='#ffffff';g.lineWidth=8;g.strokeRect(6,6,244,116);g.textAlign='center';g.textBaseline='middle';g.font='italic 900 34px "Dela Gothic One","Hiragino Kaku Gothic ProN",sans-serif';g.lineWidth=6;g.strokeStyle='#7a3a00';g.fillStyle='#ffffff';g.strokeText('MULTI',128,38,230);g.fillText('MULTI',128,38,230);g.strokeText('ORANGE BALL',128,88,230);g.fillText('ORANGE BALL',128,88,230)}
 const moTex=new THREE.CanvasTexture(moC);moTex.colorSpace=THREE.SRGBColorSpace;
-const moMat=new THREE.MeshBasicMaterial({map:moTex});
-const moG=new THREE.Group(),moM=new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.2),moMat);moM.rotation.x=-Math.PI/2;moM.position.y=.045;moG.add(moM);moG.position.z=-41;moG.visible=false;scene.add(moG);
-const mo={g:moG,mat:moMat,used:false,amp:4.2,sp:1.3,ph:.6};
+function mkMO(z,amp,sp,ph){
+  const mt=new THREE.MeshBasicMaterial({map:moTex}),g=new THREE.Group(),m=new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.2),mt);
+  m.rotation.x=-Math.PI/2;m.position.y=.045;g.add(m);g.position.z=z;g.visible=false;scene.add(g);
+  return{g,mat:mt,used:false,on:false,amp,sp,ph};
+}
+const mos=[mkMO(-41,4.2,1.3,.6),mkMO(-6.5,4.6,1.0,2.2),mkMO(-30,4.4,1.15,4.0)];
 function tryMultiOrange(body){
-  if(!FEVER||mo.used)return;
   const p=body.translation();if(p.y>1.2)return;
-  if(Math.abs(p.x-mo.g.position.x)<1.4&&Math.abs(p.z-mo.g.position.z)<.8){
-    mo.used=true;mo.mat.color.setHex(0x666666);
-    const v=body.linvel(),h=Math.hypot(v.x,v.z),ux=h>1?v.x/h:0,uz=h>1?v.z/h:-1,sp=Math.max(14,h);
-    for(let i=0;i<10;i++){const a=(Math.random()*2-1)*.35,c=Math.cos(a),sn=Math.sin(a),f=.85+Math.random()*.3;let dx=(Math.random()*2-1)*1.6;if(Math.abs(dx)<.8)dx=dx<0?-.8:.8;spawnBall(p.x+dx,.2,p.z-.4+(Math.random()*2-1)*.4,(ux*c-uz*sn)*sp*f,0,(ux*sn+uz*c)*sp*f,R_BALL/3,50,0xff9d00)}
-    pop('MULTI ORANGE BALL x10!');beep(1400,.3,'triangle',.08);
+  for(const m of mos){
+    if(!m.on||m.used)continue;
+    if(Math.abs(p.x-m.g.position.x)<1.4&&Math.abs(p.z-m.g.position.z)<.8){
+      m.used=true;m.mat.color.setHex(0x666666);
+      const v=body.linvel(),h=Math.hypot(v.x,v.z),ux=h>1?v.x/h:0,uz=h>1?v.z/h:-1,sp=Math.max(14,h);
+      for(let i=0;i<10;i++){const a=(Math.random()*2-1)*.35,c=Math.cos(a),sn=Math.sin(a),f=.85+Math.random()*.3;let dx=(Math.random()*2-1)*1.6;if(Math.abs(dx)<.8)dx=dx<0?-.8:.8;spawnBall(p.x+dx,.2,p.z-.4+(Math.random()*2-1)*.4,(ux*c-uz*sn)*sp*f,0,(ux*sn+uz*c)*sp*f,R_BALL/3,50,0xff9d00)}
+      pop('MULTI ORANGE BALL x10!');beep(1400,.3,'triangle',.08);
+    }
   }
 }
 function tryGate(body){
-  if(gateUsed)return;
+  if(gateUsed||!gateOn)return;
   const p=body.translation(),v=body.linvel();
   if(Math.abs(p.x)<GW&&Math.abs(p.z-GZ)<.7&&p.y<1.2){
     gateUsed=true;gateMat.opacity=.08;gateMat.color.setHex(0x666666);pop('MULTI BALL!');beep(784,.3,'triangle',.08);
@@ -446,17 +465,18 @@ function makePins(){
 const ang=$('ang'),pos=$('pos');const POWER=17.6;
 let ballSkin='blue';
 function applyBallSkin(){
-  const best=loadRank()[0]?.s||0;ballSkin=best>=350?'rainbow':best>=300?'gold':'blue';
+  if(MINI){ballSkin='orange';const mm=ballMesh.material;mm.color.setHex(0xff9d00);mm.emissive.setHex(0xff9d00);mm.emissiveIntensity=.25;mm.metalness=.6;mm.roughness=.2;return}
+  const nb=loadRank('pbb_rank')[0]?.s||0,hb=loadRank('pbb_rank_hard')[0]?.s||0;ballSkin=hb>=200?'rainbow':nb>=300?'gold':'blue';
   const m=ballMesh.material;
   if(ballSkin==='gold'){m.color.setHex(0xffd21e);m.emissive.setHex(0xffb000);m.emissiveIntensity=.3;m.metalness=.9;m.roughness=.25}
   else if(ballSkin==='blue'){m.color.setHex(0x1e6bff);m.emissive.setHex(0x1e6bff);m.emissiveIntensity=.15;m.metalness=.6;m.roughness=.15}
   else{m.metalness=.7;m.roughness=.2}
 }
-function makeBall(){applyBallSkin();
+function makeBall(){applyBallSkin();ballMesh.scale.setScalar(MINI?1/3:1);const BR=MINI?R_BALL/3:R_BALL;
   for(const e of extras){world.removeRigidBody(e.b);scene.remove(e.m)}extras.length=0;gateUsed=false;gateMat.opacity=.28;gateMat.color.setHex(0xffd21e);resetRoulettes();bonus=0;burst=false;mainDead=false;ballMesh.visible=true;
   if(ball)world.removeRigidBody(ball);
-  ball=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(+pos.value,R_BALL+.01,0).setCcdEnabled(true).setLinearDamping(.02).setAngularDamping(.1));
-  ballCols.clear();ballCols.add(world.createCollider(RAPIER.ColliderDesc.ball(R_BALL).setDensity(14).setRestitution(.35).setFriction(.4),ball).handle);
+  ball=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(+pos.value,BR+.01,0).setCcdEnabled(!MINI).setLinearDamping(.02).setAngularDamping(.1));
+  ballCols.clear();ballCols.add(world.createCollider(RAPIER.ColliderDesc.ball(BR).setDensity(MINI?50:14).setRestitution(.35).setFriction(.4),ball).handle);
   ball.setGravityScale(0,true);
   trailC=0;trailPos.fill(0);trailGeo.setDrawRange(0,0);
 }
@@ -467,7 +487,7 @@ scene.add(guide);
 function dirVec(){const a=ang.value*Math.PI/180;return new THREE.Vector3(Math.sin(a),0,-Math.cos(a))}
 function updateGuide(){
   $('angV').textContent=ang.value+'°';$('posV').textContent=pos.value;
-  if(ball&&state==='aim')ball.setTranslation({x:+pos.value,y:R_BALL+.01,z:0},true);
+  if(ball&&state==='aim')ball.setTranslation({x:+pos.value,y:(MINI?R_BALL/3:R_BALL)+.01,z:0},true);
   const d=dirVec(),len=12,px=+pos.value;
   guide.geometry.setFromPoints([new THREE.Vector3(px,.1,0),new THREE.Vector3(px+d.x*len,.1,d.z*len)]);
   guide.computeLineDistances();
@@ -476,7 +496,7 @@ ang.oninput=pos.oninput=updateGuide;
 
 /* ---------- 対戦ロジック ---------- */
 let TURNS=3;
-let FEVER=false,TOTAL=100,mainDead=false;
+let FEVER=false,HARD=false,MINI=false,TOTAL=100,mainDead=false,padOn=true,gateOn=true,gapOn=false;
 let phase=0,state='start',t=0,slowT=0,endDelay=0,lastShow=0,wasOn=false;
 let match={turn:0,sc:[0,0],th:[[],[]]};
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -508,16 +528,17 @@ $('mute').onclick=()=>{bgmOn=!bgmOn;if(bgmG)bgmG.gain.value=bgmOn?.35:0;$('mute'
 document.addEventListener('visibilitychange',()=>{const c=ctx.c;if(!c)return;if(document.hidden)c.suspend();else c.resume()});
 function loadRank(k='pbb_rank'){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}}
 function saveRank(r,k='pbb_rank'){try{localStorage.setItem(k,JSON.stringify(r))}catch(e){}}
-const rk_=()=>FEVER?'pbb_rank_fever':'pbb_rank';
+const rk_=()=>FEVER?'pbb_rank_fever':HARD?'pbb_rank_hard':MINI?'pbb_rank_mini':'pbb_rank';
+const modeName=()=>FEVER?'GIMMICK FEVER':HARD?'HARD MODE':MINI?'MINI BALL FEVER':'PINBALL × BOWLING';
 function rankHTML(r){return r.length?'<ol>'+r.map((e,i)=>`<li><span>${i+1}</span><b></b><em>${e.s}</em></li>`).join('')+'</ol>':'<p>まだ記録がありません</p>'}
-function showRank(){$('rankBox').innerHTML=rankHTML(loadRank());$('rankBoxF').innerHTML=rankHTML(loadRank('pbb_rank_fever'));$('rankBox2').innerHTML=rankHTML(loadRank(rk_()))}
+function showRank(){$('rankBox').innerHTML=rankHTML(loadRank());$('rankBoxF').innerHTML=rankHTML(loadRank('pbb_rank_fever'));$('rankBoxH').innerHTML=rankHTML(loadRank('pbb_rank_hard'));$('rankBoxM').innerHTML=rankHTML(loadRank('pbb_rank_mini'));$('rankBox2').innerHTML=rankHTML(loadRank(rk_()))}
 function hud(){
   for(let i=0;i<2;i++){
     $(i?'sR':'sB').textContent=match.sc[i];
     $(i?'dR':'dB').textContent=i?'HIGH SCORE':[0,1,2].slice(0,TURNS).map(k=>match.th[0][k]??'–').join(' / ');
     $(i?'tmR':'tmB').classList.toggle('on',i===0&&state!=='start');
   }
-  $('turn').textContent=(FEVER?'FEVER ':'')+`THROW ${Math.min(TURNS,match.turn+1)} / ${TURNS}`;
+  $('turn').textContent=(FEVER?'FEVER ':HARD?'HARD ':MINI?'MINI ':'')+`THROW ${Math.min(TURNS,match.turn+1)} / ${TURNS}`;
   sc[0]=match.sc[0];sc[1]=match.sc[1];drawScreens();
 }
 function banner(text,color){
@@ -526,10 +547,10 @@ function banner(text,color){
 }
 function pop(t){cheer=1;const c=document.createElement('div');c.id='combo';c.textContent=t;document.body.appendChild(c);setTimeout(()=>c.remove(),750)}
 const miniGeo=new THREE.SphereGeometry(R_BALL,12,8),ballMats={};
-function spawnBall(x,y,z,vx,vy,vz,r=R_BALL,den=14,col=0xff2d4a){
+function spawnBall(x,y,z,vx,vy,vz,r=R_BALL,den=14,col=0xff2d4a,react=false){
   const b=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(x,y,z).setCcdEnabled(r>=R_BALL).setLinearDamping(.02).setAngularDamping(.1).setLinvel(vx,vy,vz));
   ballCols.add(world.createCollider(RAPIER.ColliderDesc.ball(r).setDensity(den).setRestitution(.35).setFriction(.4),b).handle);
-  const m=new THREE.Mesh(r<R_BALL?miniGeo:ballMesh.geometry,col==='blue'?ballMesh.material:(ballMats[col]||(ballMats[col]=M(col==='launch'?0xff2d4a:col,.15,.6,.15))));m.scale.setScalar(r/R_BALL);scene.add(m);extras.push({b,m,blue:col==='blue'||col==='launch'});
+  const m=new THREE.Mesh(r<R_BALL?miniGeo:ballMesh.geometry,col==='blue'?ballMesh.material:(ballMats[col]||(ballMats[col]=M(col==='launch'?0xff2d4a:col,.15,.6,.15))));m.scale.setScalar(r/R_BALL);scene.add(m);extras.push({b,m,blue:col==='blue'||col==='launch'||react});
 }
 function flash(){cheer=1;const f=document.createElement('div');f.id='flash';document.body.appendChild(f);setTimeout(()=>f.remove(),800)}
 function newGame(){
@@ -541,7 +562,7 @@ function newGame(){
 }
 async function intro(){
   match={turn:0,sc:[0,loadRank(rk_())[0]?.s||0],th:[[],[]]};
-  $('vs').querySelector('.b').textContent=FEVER?'GIMMICK FEVER':'HIGH SCORE';$('vs').querySelector('.eyebrow').textContent=FEVER?'1 THROW CHALLENGE':'3 THROWS CHALLENGE';
+  $('vs').querySelector('.b').textContent=FEVER?'GIMMICK FEVER':HARD?'HARD MODE':MINI?'MINI BALL FEVER':'HIGH SCORE';$('vs').querySelector('.eyebrow').textContent=FEVER?'1 THROW CHALLENGE':'3 THROWS CHALLENGE';
   makePins();makeBall();guide.visible=false;state='cd';hud();
   $('hud').classList.add('hide');$('result').classList.add('hide');$('final').classList.add('hide');$('start').classList.add('hide');
   $('vs').classList.remove('hide');beep(180,.5,'sawtooth',.07);await wait(1800);$('vs').classList.add('hide');
@@ -562,6 +583,7 @@ function fire(){
   ball.setLinvel({x:d.x*v,y:0,z:d.z*v},true);
   ball.setAngvel({x:-d.z*v/R_BALL*.5,y:0,z:d.x*v/R_BALL*.5},true);
   if(FEVER)[-1,1].forEach(sg=>{const a=sg*.1,c=Math.cos(a),sn=Math.sin(a);spawnBall(+pos.value+sg*1.2,R_BALL+.01,0,(d.x*c-d.z*sn)*v,0,(d.x*sn+d.z*c)*v,R_BALL,14,'launch')});
+  if(MINI)[-2,-1,1,2].forEach(sg=>{const a=sg*.06,c=Math.cos(a),sn=Math.sin(a);spawnBall(+pos.value+sg*.9,R_BALL/3+.01,0,(d.x*c-d.z*sn)*v,0,(d.x*sn+d.z*c)*v,R_BALL/3,50,0xff9d00,true)});
   beep(220,.25,'sawtooth',.06);
 }
 function countPins(){
@@ -588,7 +610,7 @@ function finish(){
   if(n===TOTAL&&!burst){[523,659,784,1047].forEach((f,k)=>setTimeout(()=>beep(f,.3,'triangle',.1),k*130))}else beep(n?392:150,.3,'triangle',.08);
 }
 let lastShare=null,cardC=null;
-function scoreText(){const s=lastShare;return `${FEVER?'GIMMICK FEVER':'PINBALL × BOWLING'} ${TURNS}投の合計 ${s.b}点！（${s.th.join(' + ')}）${s.rec?'ハイスコア更新！':''} #PINBALLBOWLING`}
+function scoreText(){const s=lastShare;return `${modeName()} ${TURNS}投の合計 ${s.b}点！（${s.th.join(' + ')}）${s.rec?'ハイスコア更新！':''} #PINBALLBOWLING`}
 function drawCard(s){
   const c=document.createElement('canvas');c.width=900;c.height=1100;const g=c.getContext('2d');
   const gr=g.createLinearGradient(0,0,900,1100);gr.addColorStop(0,'#04103a');gr.addColorStop(1,'#1e6bff');g.fillStyle=gr;g.fillRect(0,0,900,1100);
@@ -596,7 +618,7 @@ function drawCard(s){
   g.strokeStyle='#ffd21e';g.lineWidth=14;g.strokeRect(20,20,860,1060);
   g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';
   const T=(t,y,sz,fill)=>{g.font=`italic 900 ${sz}px "Dela Gothic One","Hiragino Kaku Gothic ProN",sans-serif`;g.lineWidth=sz/8;g.strokeStyle='#000';g.strokeText(t,450,y,780);g.fillStyle=fill;g.fillText(t,450,y,780)};
-  T(FEVER?'GIMMICK FEVER':'PINBALL × BOWLING',150,80,'#ffd21e');T(TURNS+(TURNS>1?' THROWS':' THROW')+' SCORE',260,44,'#34d3ff');
+  T(modeName(),150,80,'#ffd21e');T(TURNS+(TURNS>1?' THROWS':' THROW')+' SCORE',260,44,'#34d3ff');
   T(String(s.b),520,300,'#ffffff');T('点',700,60,'#ffffff');
   T(s.th.join(' + '),810,70,'#ffd21e');
   if(s.rec)T('NEW RECORD!',930,70,'#ff6d82');
@@ -653,9 +675,10 @@ function updateCam(dt,now){
   else if(state==='aim'||state==='cd'){pp=[b.x*.6,3.6,6.2];lp=[b.x*.3,.3,-10]}
   else if(b.z>-4){pp=[4,6,7];lp=[b.x*.5,0,b.z-6];area='発射エリア'}
   else if(b.z>-40){pp=[b.x*.4,15,b.z+9];lp=[b.x*.8,0,b.z-2];area='ピンボールエリア'}
-  else if(b.z>-54){pp=[b.x*.5,4.5,b.z+8];lp=[b.x,0,b.z-7];area='加速ゾーン'}
+  else if(b.z>-54){pp=[b.x*.5,4.5,b.z+8];lp=[b.x,0,b.z-7];area=gapOn?'橋ゾーン':'加速ゾーン'}
   else{pp=[0,6.5,Math.max(b.z+9,-64)];lp=[b.x*.3,.3,Math.min(b.z-4,-77)];area='ボウリングエリア'}
   if(state==='result'){pp=[0,6.5,-64];lp=[0,.3,-78]}
+  if(MINI&&state!=='start'){pp=[0,85,25];lp=[0,0,-42]}
   const k=1-Math.exp(-3.5*dt);
   camPos.lerp(new THREE.Vector3(...pp),k);camLook.lerp(new THREE.Vector3(...lp),k);
   cam.position.copy(camPos);cam.lookAt(camLook);
@@ -675,9 +698,10 @@ let acc=0,last=performance.now();
 function loop(now){
   requestAnimationFrame(loop);
   const dt=Math.min((now-last)/1000,.05);last=now;
-  padG.position.x=4.2*Math.sin(now/1000*1.3);
+  padG.position.x=4.2*Math.sin(now/1000*1.3);padG.visible=padOn;
   for(const r of roulettes){if(!r.on){r.g.visible=false;continue}r.g.visible=true;r.g.position.x=r.amp*Math.sin(now/1000*r.sp+r.ph);if(!r.used)r.g.rotation.y-=dt*3.5}
-  mo.g.visible=FEVER;if(FEVER)mo.g.position.x=mo.amp*Math.sin(now/1000*mo.sp+mo.ph);
+  for(const m of mos){m.g.visible=m.on;if(m.on)m.g.position.x=m.amp*Math.sin(now/1000*m.sp+m.ph)}
+  if(gapOn){const bx=5.6*Math.sin(now/1000*1.1);bridgeB.setNextKinematicTranslation({x:bx,y:-.25,z:BRZ});bridgeMesh.position.x=bx}
   padTex.offset.y-=dt*1.4;
   
   for(const sl of sliders){const x=sl.amp*Math.sin(now/1000*sl.sp);sl.b.setNextKinematicTranslation({x,y:.5,z:sl.z});sl.m.position.set(x,.5,sl.z)}
@@ -689,7 +713,7 @@ function loop(now){
   if(state==='run'){
     t+=dt;
     const v=mainDead?{x:0,y:0,z:0}:ball.linvel(),sp=Math.hypot(v.x,v.y,v.z),p=ball.translation();
-    const on=Math.abs(p.x-padG.position.x)<1.9&&Math.abs(p.z-PAD_Z)<2.3&&p.y<1.2;
+    const on=padOn&&Math.abs(p.x-padG.position.x)<1.9&&Math.abs(p.z-PAD_Z)<2.3&&p.y<1.2;
     if(on&&sp<48)ball.applyImpulse({x:0,y:0,z:-ball.mass()*100*dt},true);
     if(on&&!wasOn)beep(880,.25,'square',.05);
     wasOn=on;padMat.color.setHex(on?0xffffff:0xb8d8c0);
@@ -700,9 +724,9 @@ function loop(now){
     for(let k=extras.length-1;k>=0;k--){
       const e=extras[k],ev=e.b.linvel(),es=Math.hypot(ev.x,ev.y,ev.z),ep=e.b.translation();
       if(ep.y<-3||ep.z<-86||e.dead){world.removeRigidBody(e.b);scene.remove(e.m);extras.splice(k,1);continue}
-      if(Math.abs(ep.x-padG.position.x)<1.9&&Math.abs(ep.z-PAD_Z)<2.3&&ep.y<1.2&&es<48)e.b.applyImpulse({x:0,y:0,z:-e.b.mass()*100*dt},true);
+      if(padOn&&Math.abs(ep.x-padG.position.x)<1.9&&Math.abs(ep.z-PAD_Z)<2.3&&ep.y<1.2&&es<48)e.b.applyImpulse({x:0,y:0,z:-e.b.mass()*100*dt},true);
       for(const w of weakPads)if(Math.abs(ep.x-w.x)<w.w/2+.3&&Math.abs(ep.z-w.z)<w.d/2+.3&&ep.y<1.2&&es<34)e.b.applyImpulse({x:0,y:0,z:-e.b.mass()*40*dt},true);
-      if(FEVER&&e.blue){tryRoulettes(e.b,false);tryGate(e.b);tryMultiOrange(e.b)}
+      if((FEVER||MINI)&&e.blue){tryRoulettes(e.b,false);tryGate(e.b);tryMultiOrange(e.b)}
       spAll=Math.max(spAll,es);
     }
     slowT=spAll<.4?slowT+dt:0;
@@ -710,7 +734,8 @@ function loop(now){
     if(n>=lastShow+(FEVER?10:3)||(n===TOTAL&&lastShow<TOTAL)){
       lastShow=n;const c=document.createElement('div');c.id='combo';c.textContent=`${n} PINS!`;document.body.appendChild(c);setTimeout(()=>c.remove(),750);beep(Math.min(1800,500+n*4),.08,'square',.04);
     }
-    if(slowT>1.5||t>50||p.y<-3||p.z<-96||n===TOTAL||burst){endDelay+=dt;if(endDelay>1.2||p.y<-3)finish()}
+    if(!mainDead&&p.y<-3){mainDead=true;ball.setEnabled(false);ballMesh.visible=false}
+    if(slowT>1.5||t>50||p.z<-96||n===TOTAL||burst){endDelay+=dt;if(endDelay>1.2)finish()}
     trailPos.copyWithin(3,0,trailN*3-3);trailPos[0]=p.x;trailPos[1]=p.y;trailPos[2]=p.z;
     trailC=Math.min(trailC+1,trailN);trailGeo.attributes.position.needsUpdate=true;trailGeo.setDrawRange(0,trailC);
   }
@@ -725,9 +750,17 @@ function loop(now){
 }
 
 /* ---------- 入力 ---------- */
-function setMode(f){FEVER=f;TOTAL=f?300:100;TURNS=f?1:3;roulettes.forEach((r,i)=>{r.on=i===0||f;r.mat.map=f?rTexF:rTex;r.mat.needsUpdate=true})}
-$('startBtn').onclick=()=>{setMode(false);ctx();startBGM();intro()};
-$('feverBtn').onclick=()=>{setMode(true);ctx();startBGM();intro()};
+function setMode(m){
+  FEVER=m==='fever';HARD=m==='hard';MINI=m==='mini';
+  TOTAL=FEVER?300:100;TURNS=FEVER?1:3;
+  roulettes.forEach((r,i)=>{r.on=i===0||FEVER;r.mat.map=FEVER?rTexF:rTex;r.mat.needsUpdate=true});
+  scene.fog.near=MINI?250:70;scene.fog.far=MINI?600:220;gapOn=HARD||MINI;padOn=!gapOn;gateOn=!MINI;setGap(gapOn);gateG.visible=gateOn;
+  mos.forEach((x,i)=>{x.on=FEVER?i===0:MINI});
+}
+$('startBtn').onclick=()=>{setMode('normal');ctx();startBGM();intro()};
+$('hardBtn').onclick=()=>{setMode('hard');ctx();startBGM();intro()};
+$('miniBtn').onclick=()=>{setMode('mini');ctx();startBGM();intro()};
+$('feverBtn').onclick=()=>{setMode('fever');ctx();startBGM();intro()};
 $('toStart').onclick=()=>{$('final').classList.add('hide');$('shareBox').classList.add('hide');$('start').classList.remove('hide');state='start'};
 $('again').onclick=()=>{$('final').classList.add('hide');intro()};
 $('next').onclick=()=>{match.turn<TURNS-1?nextTurn():showFinal()};
@@ -745,7 +778,7 @@ addEventListener('keydown',e=>{
 });
 
 makePins();makeBall();updateGuide();hud();showRank();
-$('startBtn').disabled=false;$('startBtn').textContent='チャレンジスタート';$('feverBtn').disabled=false;
+for(const id of['startBtn','hardBtn','feverBtn','miniBtn'])$(id).disabled=false;$('startBtn').textContent='ノーマルモード';
 requestAnimationFrame(loop);
 </script>
 </body>
