@@ -80,11 +80,12 @@ input[type=range]{width:100%;accent-color:var(--yel);pointer-events:none}
   <h1 class="mt">PINBALL<br><span>×</span>BOWLING</h1>
   <p>動く位置と角度をタイミングよくストップ！複雑なピンボールと加速板を駆け抜けて、3投の合計でハイスコアを狙え！</p>
   <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:flex-start;width:100%;max-width:760px">
-    <div class="mcol"><button id="startBtn" class="cta" disabled>読み込み中…</button><p class="md">通常ルール・3投の合計</p><div class="pn rank"><h3>RANKING</h3><div id="rankBox"></div></div></div>
-    <div class="mcol"><button id="hardBtn" class="cta" disabled style="background:linear-gradient(180deg,#b9c4dc,#3a4a78);color:#fff">ハードモード</button><p class="md">加速板なし・動く橋を渡れ</p><div class="pn rank"><h3>HARD RANKING</h3><div id="rankBoxH"></div></div></div>
-    <div class="mcol"><button id="feverBtn" class="cta" disabled style="background:linear-gradient(180deg,#ff9a9a,#ff2d4a);color:#fff">ギミックフィーバー</button><p class="md">1投勝負・3球同時・ピン300本</p><div class="pn rank"><h3>FEVER RANKING</h3><div id="rankBoxF"></div></div></div>
-    <div class="mcol"><button id="miniBtn" class="cta" disabled style="background:linear-gradient(180deg,#ffd08a,#ff9d00);color:#2a1c00">ミニボールフィーバー</button><p class="md">オレンジ5球・MULTI ORANGE×3</p><div class="pn rank"><h3>MINI RANKING</h3><div id="rankBoxM"></div></div></div>
+    <div class="mcol"><button id="startBtn" class="cta" disabled>読み込み中…</button><p class="md">通常ルール・3投の合計</p><div class="pn rank"><h3>HIGH SCORE</h3><div id="rankBox"></div></div></div>
+    <div class="mcol"><button id="hardBtn" class="cta" disabled style="background:linear-gradient(180deg,#b9c4dc,#3a4a78);color:#fff">ハードモード</button><p class="md">加速板なし・動く橋を渡れ</p><div class="pn rank"><h3>HARD HIGH SCORE</h3><div id="rankBoxH"></div></div></div>
+    <div class="mcol"><button id="feverBtn" class="cta" disabled style="background:linear-gradient(180deg,#ff9a9a,#ff2d4a);color:#fff">ギミックフィーバー</button><p class="md">1投勝負・3球同時・ピン300本</p><div class="pn rank"><h3>FEVER HIGH SCORE</h3><div id="rankBoxF"></div></div></div>
+    <div class="mcol"><button id="miniBtn" class="cta" disabled style="background:linear-gradient(180deg,#ffd08a,#ff9d00);color:#2a1c00">ミニボールフィーバー</button><p class="md">オレンジ5球・MULTI ORANGE×3</p><div class="pn rank"><h3>MINI HIGH SCORE</h3><div id="rankBoxM"></div></div></div>
   </div>
+  <div style="margin-top:16px"><div class="eyebrow" style="font-size:13px;margin-bottom:6px">BALL SELECT</div><div id="ballBtns" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"></div><p style="margin:8px 0 0;font-size:12px;line-height:1.5">解除条件：金＝ノーマル300点以上／虹＝ハード200点以上／地球＝ギミック・ミニの両方で300点以上<br>ミニボールフィーバーでは常にオレンジ</p></div>
   <p id="err"></p>
 </div>
 <div id="vs" class="ov hide"><div class="eyebrow">3 THROWS CHALLENGE</div><div class="vsrow"><span class="b">HIGH SCORE</span></div></div>
@@ -102,8 +103,8 @@ input[type=range]{width:100%;accent-color:var(--yel);pointer-events:none}
   <div class="eyebrow">FINAL RESULT</div>
   <h1 id="win" class="mt"></h1>
   <div id="fsc"></div>
-  <div class="pn rank"><h3>RANKING</h3><div id="rankBox2"></div></div>
-  <p></p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px"><button id="shBtn" class="cta">共有</button><a id="xBtn" class="cta" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;background:#000;color:#fff;border:2px solid #fff">Xで投稿</a></div><button id="again" class="cta">もう一度挑戦</button><br><button id="toStart" class="cta" style="margin-top:10px;background:#fff;font-size:16px;padding:8px 26px">モード選択へ</button>
+  <div class="pn rank"><h3>HIGH SCORE</h3><div id="rankBox2"></div></div>
+  <p id="unlockMsg" style="color:#ffd21e;font-weight:900;min-height:1.4em"></p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px"><button id="shBtn" class="cta">共有</button><a id="xBtn" class="cta" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;background:#000;color:#fff;border:2px solid #fff">Xで投稿</a></div><button id="again" class="cta">もう一度挑戦</button><br><button id="toStart" class="cta" style="margin-top:10px;background:#fff;font-size:16px;padding:8px 26px">モード選択へ</button>
 </div>
 
 <div id="shareBox" class="ov hide" style="z-index:9">
@@ -463,14 +464,28 @@ function makePins(){
   }
 }
 const ang=$('ang'),pos=$('pos');const POWER=17.6;
+function mkEarth(){
+  const c=document.createElement('canvas');c.width=512;c.height=256;const g=c.getContext('2d');
+  const oc=g.createLinearGradient(0,0,0,256);oc.addColorStop(0,'#2b6bd6');oc.addColorStop(.5,'#1e6bff');oc.addColorStop(1,'#2b6bd6');g.fillStyle=oc;g.fillRect(0,0,512,256);
+  let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+  g.fillStyle='#35b060';
+  for(let k=0;k<14;k++){const cx=rnd()*512,cy=50+rnd()*156,n=5+Math.floor(rnd()*4);g.beginPath();for(let i=0;i<=n;i++){const a=i/n*Math.PI*2,r=18+rnd()*34,x=cx+Math.cos(a)*r*1.6,y=cy+Math.sin(a)*r;i?g.lineTo(x,y):g.moveTo(x,y)}g.closePath();g.fill()}
+  g.fillStyle='#d9c27a';for(let k=0;k<6;k++){g.beginPath();g.arc(rnd()*512,70+rnd()*116,6+rnd()*10,0,7);g.fill()}
+  g.fillStyle='rgba(255,255,255,.55)';for(let k=0;k<16;k++){g.beginPath();g.ellipse(rnd()*512,20+rnd()*216,20+rnd()*40,4+rnd()*6,0,0,7);g.fill()}
+  g.fillStyle='#f4f8ff';g.fillRect(0,0,512,14);g.fillRect(0,242,512,14);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=THREE.RepeatWrapping;return t;
+}
+const earthTex=mkEarth();
 let ballSkin='blue';
 function applyBallSkin(){
-  if(MINI){ballSkin='orange';const mm=ballMesh.material;mm.color.setHex(0xff9d00);mm.emissive.setHex(0xff9d00);mm.emissiveIntensity=.25;mm.metalness=.6;mm.roughness=.2;return}
-  const nb=loadRank('pbb_rank')[0]?.s||0,hb=loadRank('pbb_rank_hard')[0]?.s||0;ballSkin=hb>=200?'rainbow':nb>=300?'gold':'blue';
   const m=ballMesh.material;
-  if(ballSkin==='gold'){m.color.setHex(0xffd21e);m.emissive.setHex(0xffb000);m.emissiveIntensity=.3;m.metalness=.9;m.roughness=.25}
-  else if(ballSkin==='blue'){m.color.setHex(0x1e6bff);m.emissive.setHex(0x1e6bff);m.emissiveIntensity=.15;m.metalness=.6;m.roughness=.15}
-  else{m.metalness=.7;m.roughness=.2}
+  if(MINI){ballSkin='orange';if(m.map){m.map=null;m.needsUpdate=true}m.color.setHex(0xff9d00);m.emissive.setHex(0xff9d00);m.emissiveIntensity=.25;m.metalness=.6;m.roughness=.2;return}
+  const c=chosenBall();ballSkin=c;
+  if(c==='earth'){m.map=earthTex;m.color.setHex(0xffffff);m.emissive.setHex(0x0a2a55);m.emissiveIntensity=.4;m.metalness=.1;m.roughness=.5;m.needsUpdate=true;return}
+  if(m.map){m.map=null;m.needsUpdate=true}
+  if(c==='gold'){m.color.setHex(0xffd21e);m.emissive.setHex(0xffb000);m.emissiveIntensity=.3;m.metalness=.9;m.roughness=.25}
+  else if(c==='rainbow'){m.metalness=.7;m.roughness=.2}
+  else{m.color.setHex(0x1e6bff);m.emissive.setHex(0x1e6bff);m.emissiveIntensity=.15;m.metalness=.6;m.roughness=.15}
 }
 function makeBall(){applyBallSkin();ballMesh.scale.setScalar(MINI?1/3:1);const BR=MINI?R_BALL/3:R_BALL;
   for(const e of extras){world.removeRigidBody(e.b);scene.remove(e.m)}extras.length=0;gateUsed=false;gateMat.opacity=.28;gateMat.color.setHex(0xffd21e);resetRoulettes();bonus=0;burst=false;mainDead=false;ballMesh.visible=true;
@@ -530,8 +545,30 @@ function loadRank(k='pbb_rank'){try{return JSON.parse(localStorage.getItem(k)||'
 function saveRank(r,k='pbb_rank'){try{localStorage.setItem(k,JSON.stringify(r))}catch(e){}}
 const rk_=()=>FEVER?'pbb_rank_fever':HARD?'pbb_rank_hard':MINI?'pbb_rank_mini':'pbb_rank';
 const modeName=()=>FEVER?'GIMMICK FEVER':HARD?'HARD MODE':MINI?'MINI BALL FEVER':'PINBALL × BOWLING';
-function rankHTML(r){return r.length?'<ol>'+r.map((e,i)=>`<li><span>${i+1}</span><b></b><em>${e.s}</em></li>`).join('')+'</ol>':'<p>まだ記録がありません</p>'}
-function showRank(){$('rankBox').innerHTML=rankHTML(loadRank());$('rankBoxF').innerHTML=rankHTML(loadRank('pbb_rank_fever'));$('rankBoxH').innerHTML=rankHTML(loadRank('pbb_rank_hard'));$('rankBoxM').innerHTML=rankHTML(loadRank('pbb_rank_mini'));$('rankBox2').innerHTML=rankHTML(loadRank(rk_()))}
+function rankHTML(r){return r.length?'<ol>'+r.slice(0,1).map((e,i)=>`<li><span>${i+1}</span><b></b><em>${e.s}</em></li>`).join('')+'</ol>':'<p>まだ記録がありません</p>'}
+const BALLS=[['blue','青','#1e6bff'],['gold','金','#ffd21e'],['rainbow','虹','linear-gradient(90deg,#ff2d4a,#ffd21e,#2cff7a,#34d3ff,#9b59ff)'],['earth','地球','linear-gradient(180deg,#1e6bff,#35b060)']];
+function unlockedBalls(){
+  const g=k=>loadRank(k)[0]?.s||0;
+  return{blue:true,gold:g('pbb_rank')>=300,rainbow:g('pbb_rank_hard')>=200,earth:g('pbb_rank_fever')>=300&&g('pbb_rank_mini')>=300};
+}
+function chosenBall(){
+  const u=unlockedBalls();let c='';
+  try{c=localStorage.getItem('pbb_ball')||''}catch(e){}
+  if(c&&u[c])return c;
+  return u.earth?'earth':u.rainbow?'rainbow':u.gold?'gold':'blue';
+}
+function renderBalls(){
+  const u=unlockedBalls(),cur=chosenBall(),box=$('ballBtns');
+  box.innerHTML='';
+  for(const [id,label,bg] of BALLS){
+    const b=document.createElement('button');b.className='cta';
+    b.style.cssText=`font-size:15px;padding:8px 16px;background:${u[id]?bg:'#444'};color:${u[id]&&id!=='gold'?'#fff':'#222'};opacity:${u[id]?1:.55}`;
+    b.textContent=(id===cur?'✔ ':'')+(u[id]?'':'🔒')+label;b.disabled=!u[id];
+    b.onclick=()=>{try{localStorage.setItem('pbb_ball',id)}catch(e){}renderBalls()};
+    box.appendChild(b);
+  }
+}
+function showRank(){$('rankBox').innerHTML=rankHTML(loadRank());$('rankBoxF').innerHTML=rankHTML(loadRank('pbb_rank_fever'));$('rankBoxH').innerHTML=rankHTML(loadRank('pbb_rank_hard'));$('rankBoxM').innerHTML=rankHTML(loadRank('pbb_rank_mini'));$('rankBox2').innerHTML=rankHTML(loadRank(rk_()));renderBalls()}
 function hud(){
   for(let i=0;i<2;i++){
     $(i?'sR':'sB').textContent=match.sc[i];
@@ -550,7 +587,7 @@ const miniGeo=new THREE.SphereGeometry(R_BALL,12,8),ballMats={};
 function spawnBall(x,y,z,vx,vy,vz,r=R_BALL,den=14,col=0xff2d4a,react=false){
   const b=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(x,y,z).setCcdEnabled(r>=R_BALL).setLinearDamping(.02).setAngularDamping(.1).setLinvel(vx,vy,vz));
   ballCols.add(world.createCollider(RAPIER.ColliderDesc.ball(r).setDensity(den).setRestitution(.35).setFriction(.4),b).handle);
-  const m=new THREE.Mesh(r<R_BALL?miniGeo:ballMesh.geometry,col==='blue'?ballMesh.material:(ballMats[col]||(ballMats[col]=M(col==='launch'?0xff2d4a:col,.15,.6,.15))));m.scale.setScalar(r/R_BALL);scene.add(m);extras.push({b,m,blue:col==='blue'||col==='launch'||react});
+  const m=new THREE.Mesh(r<R_BALL?miniGeo:ballMesh.geometry,(col==='blue'||(react&&MINI&&ballSkin==='earth'))?ballMesh.material:(ballMats[col]||(ballMats[col]=M(col==='launch'?0xff2d4a:col,.15,.6,.15))));m.scale.setScalar(r/R_BALL);scene.add(m);extras.push({b,m,blue:col==='blue'||col==='launch'||react});
 }
 function flash(){cheer=1;const f=document.createElement('div');f.id='flash';document.body.appendChild(f);setTimeout(()=>f.remove(),800)}
 function newGame(){
@@ -650,9 +687,20 @@ function showFinal(){
   const b=match.sc[0],rec=b>(loadRank(rk_())[0]?.s||0);
   $('result').classList.add('hide');
   $('win').textContent=rec?'NEW RECORD!':'TOTAL SCORE';
+  {
+    const pv=loadRank(rk_())[0]?.s||0;let t='';
+    if(FEVER||MINI){
+      if(b>=300&&pv<300){
+        const ob=loadRank(FEVER?'pbb_rank_mini':'pbb_rank_fever')[0]?.s||0;
+        t=ob>=300?'🌍 地球ボール解除！スタート画面のボール選択から選べます':`${FEVER?'ギミック':'ミニボール'}フィーバーで300点達成！あとは${FEVER?'ミニボール':'ギミック'}フィーバーでも300点で地球ボール解除`;
+      }
+    }else if(HARD){if(b>=200&&pv<200)t='🌈 虹色ボール解除！スタート画面のボール選択から選べます'}
+    else if(b>=300&&pv<300)t='🥇 金色ボール解除！スタート画面のボール選択から選べます';
+    $('unlockMsg').textContent=t;
+  }
   $('fsc').innerHTML=`<span style="color:#ffd21e">${b}</span><small style="font-size:.35em;color:#aab8e0">${match.th[0].join(' + ')}</small>`;
   const rk=loadRank(rk_());rk.push({s:b});
-  rk.sort((x,y)=>y.s-x.s);saveRank(rk.slice(0,5),rk_());showRank();
+  rk.sort((x,y)=>y.s-x.s);saveRank(rk.slice(0,1),rk_());showRank();
   lastShare={b,th:match.th[0].slice(),rec};
   $('xBtn').href='https://x.com/intent/post?text='+encodeURIComponent(scoreText()+' '+location.href+'\nhttps://x.com/renkinhero/status/2122903413033951675?a=beVimmWS3r9tTi-E1cE&s=46');
   $('final').classList.remove('hide');flash();
@@ -678,7 +726,7 @@ function updateCam(dt,now){
   else if(b.z>-54){pp=[b.x*.5,4.5,b.z+8];lp=[b.x,0,b.z-7];area=gapOn?'橋ゾーン':'加速ゾーン'}
   else{pp=[0,6.5,Math.max(b.z+9,-64)];lp=[b.x*.3,.3,Math.min(b.z-4,-77)];area='ボウリングエリア'}
   if(state==='result'){pp=[0,6.5,-64];lp=[0,.3,-78]}
-  if(MINI&&state!=='start'){pp=[0,85,25];lp=[0,0,-42]}
+  if(MINI&&state!=='start'){pp=[0,40,20];lp=[0,0,-23]}
   const k=1-Math.exp(-3.5*dt);
   camPos.lerp(new THREE.Vector3(...pp),k);camLook.lerp(new THREE.Vector3(...lp),k);
   cam.position.copy(camPos);cam.lookAt(camLook);
