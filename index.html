@@ -85,7 +85,7 @@ input[type=range]{width:100%;accent-color:var(--yel);pointer-events:none}
     <div class="mcol"><button id="feverBtn" class="cta" disabled style="background:linear-gradient(180deg,#ff9a9a,#ff2d4a);color:#fff">ギミックフィーバー</button><p class="md">1投勝負・3球同時・ピン300本</p><div class="pn rank"><h3>FEVER HIGH SCORE</h3><div id="rankBoxF"></div></div></div>
     <div class="mcol"><button id="miniBtn" class="cta" disabled style="background:linear-gradient(180deg,#ffd08a,#ff9d00);color:#2a1c00">ミニボールフィーバー</button><p class="md">オレンジ5球・MULTI ORANGE×3</p><div class="pn rank"><h3>MINI HIGH SCORE</h3><div id="rankBoxM"></div></div></div>
   </div>
-  <div style="margin-top:16px"><div class="eyebrow" style="font-size:13px;margin-bottom:6px">BALL SELECT</div><div id="ballBtns" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"></div><p style="margin:8px 0 0;font-size:12px;line-height:1.5">解除条件：金＝ノーマル300点以上／虹＝ハード200点以上／地球＝ギミック・ミニの両方で300点以上<br>ミニボールフィーバーでは常にオレンジ</p></div>
+  <div style="margin-top:16px"><div class="eyebrow" style="font-size:13px;margin-bottom:6px">BALL SELECT</div><div id="ballBtns" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"></div><p style="margin:8px 0 0;font-size:12px;line-height:1.5">解除条件：金＝ノーマル300点以上／虹＝ハード200点以上／地球＝ギミック・ミニの両方で300点以上</p></div>
   <p id="err"></p>
 </div>
 <div id="vs" class="ov hide"><div class="eyebrow">3 THROWS CHALLENGE</div><div class="vsrow"><span class="b">HIGH SCORE</span></div></div>
@@ -188,13 +188,13 @@ function spinner(x,z,w){
 }
 box(14,.5,42,0,-.25,-19,floorM(7,21));
 const connNormal=box(18,.5,12,0,-.25,-46,floorM(9,6));
-const gapParts=[box(18,.5,5,0,-.25,-42.5,floorM(9,2.5)),box(18,.5,3,0,-.25,-50.5,floorM(9,1.5))];
+const gapParts=[box(18,.5,4,0,-.25,-42,floorM(9,2)),box(18,.5,2,0,-.25,-51,floorM(9,1))];
 const BRZ=-47;
-const bridgeMesh=new THREE.Mesh(new THREE.BoxGeometry(2,.5,4.4),M(0xffd21e,.4,.3,.5));bridgeMesh.position.set(0,-.25,BRZ);scene.add(bridgeMesh);
+const bridgeMesh=new THREE.Mesh(new THREE.BoxGeometry(2,.5,6.4),M(0xffd21e,.4,.3,.5));bridgeMesh.position.set(0,-.25,BRZ);scene.add(bridgeMesh);
 const bridgeB=world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0,-.25,BRZ));
-world.createCollider(RAPIER.ColliderDesc.cuboid(1,.25,2.2).setFriction(.5).setRestitution(.2),bridgeB);
+world.createCollider(RAPIER.ColliderDesc.cuboid(1,.25,3.2).setFriction(.5).setRestitution(.2),bridgeB);
 const gapDeco=new THREE.Group();
-[-45,-49].forEach(z=>{const m=new THREE.Mesh(new THREE.BoxGeometry(18,.06,.3),new THREE.MeshBasicMaterial({color:0xff2d4a}));m.position.set(0,.03,z);gapDeco.add(m)});
+[-44,-50].forEach(z=>{const m=new THREE.Mesh(new THREE.BoxGeometry(18,.06,.3),new THREE.MeshBasicMaterial({color:0xff2d4a}));m.position.set(0,.03,z);gapDeco.add(m)});
 scene.add(gapDeco);
 function setGap(on){connNormal.mesh.visible=!on;connNormal.b.setEnabled(!on);for(const g of gapParts){g.mesh.visible=on;g.b.setEnabled(on)}bridgeMesh.visible=on;bridgeB.setEnabled(on);gapDeco.visible=on}
 setGap(false);
@@ -428,6 +428,12 @@ const trail=new THREE.Line(trailGeo,new THREE.LineBasicMaterial({color:0x34d3ff}
 let trailC=0;
 const pinGeo=new THREE.LatheGeometry([[0,-.45],[.13,-.45],[.15,-.3],[.2,-.05],[.13,.15],[.075,.25],[.1,.37],[.07,.45],[0,.46]].map(p=>new THREE.Vector2(...p)),20);
 const pins=[];
+const matPinMini=M(0xffffff,.3,.1,.55);
+const pinZoneG=new THREE.Group();
+{const pl=new THREE.Mesh(new THREE.PlaneGeometry(14.6,13.6),new THREE.MeshBasicMaterial({color:0xffd21e,transparent:true,opacity:.28}));pl.rotation.x=-Math.PI/2;pl.position.set(0,.03,-78.2);pinZoneG.add(pl);
+ const edge=new THREE.MeshBasicMaterial({color:0xffd21e});
+ [-71.4,-85].forEach(z=>{const m=new THREE.Mesh(new THREE.BoxGeometry(14.6,.06,.2),edge);m.position.set(0,.04,z);pinZoneG.add(m)})}
+pinZoneG.visible=false;scene.add(pinZoneG);
 let fPins=null;const dummyP=new THREE.Object3D();dummyP.scale.set(.8,.9,.8);
 function clearFever(){if(fPins){fPins.list.forEach(q=>world.removeRigidBody(q.body));scene.remove(fPins.inst);fPins.inst.dispose();fPins=null}}
 function makeFeverPins(){
@@ -455,7 +461,7 @@ function makePins(){
   if(FEVER){makeFeverPins();return}
   for(let r=0;r<14;r++)for(let i=0;i<(r<13?r+1:9);i++){
     const x=(r<13?i-r/2:i-4)*1.1,z=-72-r*.95;
-    const mesh=new THREE.Mesh(pinGeo,mat.pin);mesh.scale.set(1.4,1.68,1.4);
+    const mesh=new THREE.Mesh(pinGeo,MINI?matPinMini:mat.pin);mesh.scale.set(1.4,1.68,1.4);
     const band=new THREE.Mesh(new THREE.CylinderGeometry(.115,.12,.05,16),mat.stripe);band.position.y=.22;mesh.add(band);
     scene.add(mesh);
     const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(x,.766,z).setLinearDamping(.2).setAngularDamping(.5));
@@ -726,7 +732,7 @@ function updateCam(dt,now){
   else if(b.z>-54){pp=[b.x*.5,4.5,b.z+8];lp=[b.x,0,b.z-7];area=gapOn?'橋ゾーン':'加速ゾーン'}
   else{pp=[0,6.5,Math.max(b.z+9,-64)];lp=[b.x*.3,.3,Math.min(b.z-4,-77)];area='ボウリングエリア'}
   if(state==='result'){pp=[0,6.5,-64];lp=[0,.3,-78]}
-  if(MINI&&state!=='start'){pp=[0,40,20];lp=[0,0,-23]}
+  if(MINI&&state!=='start'){pp=[0,52,26];lp=[0,0,-27]}
   const k=1-Math.exp(-3.5*dt);
   camPos.lerp(new THREE.Vector3(...pp),k);camLook.lerp(new THREE.Vector3(...lp),k);
   cam.position.copy(camPos);cam.lookAt(camLook);
@@ -802,7 +808,7 @@ function setMode(m){
   FEVER=m==='fever';HARD=m==='hard';MINI=m==='mini';
   TOTAL=FEVER?300:100;TURNS=FEVER?1:3;
   roulettes.forEach((r,i)=>{r.on=i===0||FEVER;r.mat.map=FEVER?rTexF:rTex;r.mat.needsUpdate=true});
-  scene.fog.near=MINI?250:70;scene.fog.far=MINI?600:220;gapOn=HARD||MINI;padOn=!gapOn;gateOn=!MINI;setGap(gapOn);gateG.visible=gateOn;
+  scene.fog.near=MINI?250:70;scene.fog.far=MINI?600:220;gapOn=HARD||MINI;padOn=!gapOn;roulettes[0].g.position.z=gapOn?-41.8:-43.3;mos[0].g.position.z=FEVER?-41:-38.5;pinZoneG.visible=MINI;gateOn=!MINI;setGap(gapOn);gateG.visible=gateOn;
   mos.forEach((x,i)=>{x.on=FEVER?i===0:MINI});
 }
 $('startBtn').onclick=()=>{setMode('normal');ctx();startBGM();intro()};
