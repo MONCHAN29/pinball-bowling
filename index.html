@@ -732,7 +732,8 @@ function updateCam(dt,now){
   else if(b.z>-54){pp=[b.x*.5,4.5,b.z+8];lp=[b.x,0,b.z-7];area=gapOn?'橋ゾーン':'加速ゾーン'}
   else{pp=[0,6.5,Math.max(b.z+9,-64)];lp=[b.x*.3,.3,Math.min(b.z-4,-77)];area='ボウリングエリア'}
   if(state==='result'){pp=[0,6.5,-64];lp=[0,.3,-78]}
-  if(MINI&&state!=='start'){pp=[0,52,26];lp=[0,0,-27]}
+  if(MINI&&state!=='start'){pp=[0,52,26];lp=[0,0,-35]}
+  const wantFov=(MINI&&state!=='start')?62:55;if(cam.fov!==wantFov){cam.fov=wantFov;cam.updateProjectionMatrix()}
   const k=1-Math.exp(-3.5*dt);
   camPos.lerp(new THREE.Vector3(...pp),k);camLook.lerp(new THREE.Vector3(...lp),k);
   cam.position.copy(camPos);cam.lookAt(camLook);
